@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<!--Henry Phu, YHACK data visualization graph -->
+<html>
+<head>
+<style>
+body {
+	margin-top:70px;
+	text-align:center;
+	font-size:14px;
+	font-family:Tahoma, Geneva, sans-serif;
+	background-color:#F6EEE3;
+}
+
+div {
+	margin-left:20px;
+	font-size:50px;
+}
+
+#titl {
+	text-align:center;
+	font-size:75px;
+}
+	</style>
+<script type="text/javascript" src="http://d3js.org/d3.v3.min.js" charset="utf-8">
+</script>
+
+</head>
+
+<body>
+<div></div>
+<script type="text/javascript">
+var width = 800,
+    height = 600,
+	format = d3.format(",d");
+
+var pack = d3.layout.pack()
+			.size([width-4, height-4])
+			.value(function(d){ return d.size; })
+
+var svg = d3.select("body")
+			.append("svg")
+			.attr("width", width)
+			.attr("height", height)
+			.attr("class", "pack")
+		.append("g")
+			.attr("transform", "translate(2,2)");
+
+var tooltip = d3.select("div")
+			  .append("div")
+			.style("position", "absolute")
+			.style("z-index", "10")
+			.style("visibility", "hidden")
+			.text("");
+
+var color =  d3.scale.category20b();
+
+
+d3.json("output.json", function (ROOT){
+	var node = svg.data([ROOT]).selectAll(".node")
+	.data(pack.nodes)
+	.enter().append("g")
+		.attr("class", function(d) {if (d.children){
+			return "node";
+		} else {
+			return "leaf node";
+		}})
+		.attr("transform", function(d) {return "translate("+d.x + "," + d.y+")";});
+
+	node.append("title")
+		.text(function(d) {return d.name + (d.children ? "" : ": " + format(d.size)); });
+
+	node.append("circle")
+		.attr("r", function (d) {return 2;})
+		.style("fill", function(d){ return color(d.size);})
+		//{(d.children).length==1) ? "#4e5d98" :  "#699f00" }
+		.attr("stroke", function(d){
+			if (d.name === ""){
+				return 0;
+			} else {
+				return "#33427d";
+			}
+		})
+		.attr("stroke-width","2")
+		.attr("fill-opacity", function(d){ 
+			if (d.name === ""){
+				return 0;
+			} else {
+				return .50;
+			}
+		})
+		.style("pointer-events", function (d) {if (d.name === "") return "none"})
+		.on("mouseover", function (d) { return tooltip.text(d.name).style("visibility", "visible");})
+		.on("mouseout", function() {return tooltip.style("visibility", "hidden");});
+		
+	svg.selectAll("circle").transition().duration(300)
+		.attr("r", function (d) { return d.r;})
+
+	node.filter(function(d) { return !	d.children; }).append("text")
+      .attr("dy", ".3em")
+      .style("text-anchor", "middle")
+      .style("pointer-events", "none")
+      .text(function(d) { return d.name.substring(0, d.r / 3); })
+      .style("font-size", function(d) { return ((21* d.r) / this.getComputedTextLength() + "px"); });
+
+});
+
+
+</script>
+<div></div>
+</body>
+
+</html>
